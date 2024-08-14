@@ -12,5 +12,6 @@
     ],
     "idf.port": "/dev/ttyUSB0",
     "idf.pythonBinPath": "/home/anivia/.espressif/python_env/idf5.3_py3.12_env/bin/python",
-    "idf.toolsPath": "/home/anivia/.espressif"
+    "idf.toolsPath": "/home/anivia/.espressif",
+    "idf.flashType": "UART"
 }
