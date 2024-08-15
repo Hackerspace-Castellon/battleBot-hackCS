@@ -63,6 +63,8 @@ void parada_brusca(gpio_num_t pin1, gpio_num_t pin2){
 
 
 static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
+    static const char *TAG = "ON_CONTROLLER_DATA";
+
     static uint8_t leds = 0;
     static uint8_t enabled = true;
     static uni_controller_t prev = {0};
@@ -101,18 +103,10 @@ static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
                 uint8_t b = (gp->axis_rx * 256) / 512;
                 d->report_parser.set_lightbar_color(d, r, g, b);
             }
+            ESP_LOGI(TAG,"rX: %ld, rY: %ld",gp->axis_rx, gp->axis_ry);
+            ESP_LOGI(TAG,"X: %ld, Y: %ld",gp->axis_x, gp->axis_y);
 
-            // Toggle Bluetooth connections
-            if ((gp->buttons & BUTTON_SHOULDER_L) && enabled) {
-                logi("*** Disabling Bluetooth connections\n");
-                uni_bt_enable_new_connections_safe(false);
-                enabled = false;
-            }
-            if ((gp->buttons & BUTTON_SHOULDER_R) && !enabled) {
-                logi("*** Enabling Bluetooth connections\n");
-                uni_bt_enable_new_connections_safe(true);
-                enabled = true;
-            }
+
             break;
         default:
             break;
