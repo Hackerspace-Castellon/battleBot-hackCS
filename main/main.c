@@ -7,6 +7,18 @@
 #include <soc/gpio_num.h>
 #include <driver/gpio.h>
 
+#include <btstack_port_esp32.h>
+#include <btstack_run_loop.h>
+#include <btstack_stdio_esp32.h>
+
+#include <uni.h>
+
+#include "sdkconfig.h"
+
+// Defined in my_platform.c
+struct uni_platform* get_my_platform(void);
+
+
 // motor delantero derecho
 #define PIN_MDD1 14
 #define PIN_MDD2 27
@@ -90,35 +102,29 @@ void app_main(void)
 
 
     ESP_LOGI(TAG, "Finished setup");
+    // hci_dump_open(NULL, HCI_DUMP_STDOUT);
 
+    // Don't use BTstack buffered UART. It conflicts with the console.
+#ifdef CONFIG_ESP_CONSOLE_UART
+#ifndef CONFIG_BLUEPAD32_USB_CONSOLE_ENABLE
+    btstack_stdio_init();
+#endif  // CONFIG_BLUEPAD32_USB_CONSOLE_ENABLE
+#endif  // CONFIG_ESP_CONSOLE_UART
 
-    int counter = 0;
+    // Configure BTstack for ESP32 VHCI Controller
+    btstack_init();
 
-    for (;;){
-        ESP_LOGI(TAG, "Loop: %d", counter);
+    // hci_dump_init(hci_dump_embedded_stdout_get_instance());
 
-        gpio_num_t pin1 = PIN_MTI1;
-        gpio_num_t pin2 = PIN_MTI2;
-        
-        ESP_LOGI(TAG, "AVANZANDO");
-        avanzar(pin1, pin2);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+    // Must be called before uni_init()
+    uni_platform_set_custom(get_my_platform());
 
-        ESP_LOGI(TAG, "PARADA LENTA");
-        parada_lenta(pin1, pin2);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+    // Init Bluepad32.
+    uni_init(0 /* argc */, NULL /* argv */);
 
-        ESP_LOGI(TAG, "RETROCESO");
-        retroceder(pin1, pin2);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+    // Does not return.
+    btstack_run_loop_execute();
 
+    return;
 
-        ESP_LOGI(TAG, "PARADA BRUSCA");
-        parada_brusca(pin1, pin2);
-        vTaskDelay(pdMS_TO_TICKS(5000));
-
-
-
-        counter++;
-    } 
 }
