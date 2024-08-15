@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
 #include <soc/gpio_num.h>
 #include <driver/gpio.h>
 
@@ -15,12 +16,12 @@
 #define PIN_MDI2 13
 
 // motor trasero derecho
-#define PIN_MTD1 26
-#define PIN_MTD2 25
+#define PIN_MTD1 32
+#define PIN_MTD2 33
 
 // motor trasero izquierdo
-#define PIN_MTI1 33
-#define PIN_MTI2 32
+#define PIN_MTI1 25
+#define PIN_MTI2 26
 
 // estas funciónes hay que pasarle el pin1 y pin2 del motor que queremos que avance hacia adelante.
 
@@ -96,8 +97,8 @@ void app_main(void)
     for (;;){
         ESP_LOGI(TAG, "Loop: %d", counter);
 
-        gpio_num_t pin1 = PIN_MTD1;
-        gpio_num_t pin2 = PIN_MTD2;
+        gpio_num_t pin1 = PIN_MTI1;
+        gpio_num_t pin2 = PIN_MTI2;
         
         ESP_LOGI(TAG, "AVANZANDO");
         avanzar(pin1, pin2);
