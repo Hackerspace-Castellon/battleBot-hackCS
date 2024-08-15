@@ -62,8 +62,68 @@ void parada_brusca(gpio_num_t pin1, gpio_num_t pin2){
 }
 
 
+static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
+    static uint8_t leds = 0;
+    static uint8_t enabled = true;
+    static uni_controller_t prev = {0};
+    uni_gamepad_t* gp;
+
+    // Optimization to avoid processing the previous data so that the console
+    // does not get spammed with a lot of logs, but remove it from your project.
+    if (memcmp(&prev, ctl, sizeof(*ctl)) == 0) {
+        return;
+    }
+    prev = *ctl;
+    // Print device Id before dumping gamepad.
+    // This could be very CPU intensive and might crash the ESP32.
+    // Remove these 2 lines in production code.
+    //    logi("(%p), id=%d, \n", d, uni_hid_device_get_idx_for_instance(d));
+    //    uni_controller_dump(ctl);
+
+    switch (ctl->klass) {
+        case UNI_CONTROLLER_CLASS_GAMEPAD:
+            gp = &ctl->gamepad;
+
+            // Debugging
+            // Axis ry: control rumble
+            if ((gp->buttons & BUTTON_A) && d->report_parser.play_dual_rumble != NULL) {
+                d->report_parser.play_dual_rumble(d, 0 /* delayed start ms */, 250 /* duration ms */,
+                                                  255 /* weak magnitude */, 0 /* strong magnitude */);
+            }
+            // Buttons: Control LEDs On/Off
+            if ((gp->buttons & BUTTON_B) && d->report_parser.set_player_leds != NULL) {
+                d->report_parser.set_player_leds(d, leds++ & 0x0f);
+            }
+            // Axis: control RGB color
+            if ((gp->buttons & BUTTON_X) && d->report_parser.set_lightbar_color != NULL) {
+                uint8_t r = (gp->axis_x * 256) / 512;
+                uint8_t g = (gp->axis_y * 256) / 512;
+                uint8_t b = (gp->axis_rx * 256) / 512;
+                d->report_parser.set_lightbar_color(d, r, g, b);
+            }
+
+            // Toggle Bluetooth connections
+            if ((gp->buttons & BUTTON_SHOULDER_L) && enabled) {
+                logi("*** Disabling Bluetooth connections\n");
+                uni_bt_enable_new_connections_safe(false);
+                enabled = false;
+            }
+            if ((gp->buttons & BUTTON_SHOULDER_R) && !enabled) {
+                logi("*** Enabling Bluetooth connections\n");
+                uni_bt_enable_new_connections_safe(true);
+                enabled = true;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 
 static const char *TAG = "MAIN";
+
+static const char * controller_addr_string = "40:8E:2C:63:4F:34";
+
 
 void app_main(void)
 {
@@ -100,27 +160,31 @@ void app_main(void)
     gpio_set_level(PIN_MTI1, 0);
     gpio_set_level(PIN_MTI2, 0);
 
+    // setup bluetooth
+    bd_addr_t controller_addr;
+    sscanf_bd_addr(controller_addr_string, controller_addr);
+
 
     ESP_LOGI(TAG, "Finished setup");
-    // hci_dump_open(NULL, HCI_DUMP_STDOUT);
 
-    // Don't use BTstack buffered UART. It conflicts with the console.
-#ifdef CONFIG_ESP_CONSOLE_UART
-#ifndef CONFIG_BLUEPAD32_USB_CONSOLE_ENABLE
-    btstack_stdio_init();
-#endif  // CONFIG_BLUEPAD32_USB_CONSOLE_ENABLE
-#endif  // CONFIG_ESP_CONSOLE_UART
 
     // Configure BTstack for ESP32 VHCI Controller
     btstack_init();
 
-    // hci_dump_init(hci_dump_embedded_stdout_get_instance());
+    struct uni_platform* platform = get_my_platform();
+    platform->on_controller_data = on_controller_data;
 
-    // Must be called before uni_init()
-    uni_platform_set_custom(get_my_platform());
+    uni_platform_set_custom(platform);
 
     // Init Bluepad32.
     uni_init(0 /* argc */, NULL /* argv */);
+
+
+    uni_bt_allowlist_remove_all();
+    uni_bt_allowlist_add_addr(controller_addr);
+    uni_bt_allowlist_set_enabled(true);
+    //uni_bt_enable_new_connections_safe(false);
+
 
     // Does not return.
     btstack_run_loop_execute();
