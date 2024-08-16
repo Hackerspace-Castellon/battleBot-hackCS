@@ -204,20 +204,20 @@ void mover_motor(uint32_t motor, uint32_t direction ,uint32_t pwm_value){
 
     switch (motor){
         case MOTOR_DELANTERO_DERECHO:
-            ch1 = 0;
-            ch2 = 0;
+            ch1 = LEDC_CHANNEL_2;
+            ch2 = LEDC_CHANNEL_3;
         break;
         case MOTOR_DELANTERO_IZQUIERDO:
             ch1 = LEDC_CHANNEL_0;
             ch2 = LEDC_CHANNEL_1;
         break;
         case MOTOR_TRASERO_DERECHO:
-            ch1 = 0;
-            ch2 = 0;
+            ch1 = LEDC_CHANNEL_4;
+            ch2 = LEDC_CHANNEL_5;
         break;
         case MOTOR_TRASERO_IZQUIERDO:
-            ch1 = 0;
-            ch2 = 0;
+            ch1 = LEDC_CHANNEL_6;
+            ch2 = LEDC_CHANNEL_7;
         break;
     }
 
