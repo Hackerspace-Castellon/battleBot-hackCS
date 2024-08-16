@@ -45,33 +45,11 @@ struct uni_platform* get_my_platform(void);
 #define PIN_MTI1 25
 #define PIN_MTI2 26
 
-// estas funciónes hay que pasarle el pin1 y pin2 del motor que queremos que avance hacia adelante. 
+// para almacenar los valores de los ejes:
 
-// SIN PWM
-
-void parada_lenta(gpio_num_t pin1, gpio_num_t pin2){
-    gpio_set_level(pin1, 0);
-    gpio_set_level(pin2, 0);
-
-}
-
-void retroceder(gpio_num_t pin1, gpio_num_t pin2){
-    gpio_set_level(pin1, 0);
-    gpio_set_level(pin2, 1);
-
-}
-
-void avanzar(gpio_num_t pin1, gpio_num_t pin2){
-    gpio_set_level(pin1, 1);
-    gpio_set_level(pin2, 0);
-
-}
-
-void parada_brusca(gpio_num_t pin1, gpio_num_t pin2){
-    gpio_set_level(pin1, 1);
-    gpio_set_level(pin2, 1);
-
-}
+static volatile uint32_t g_joystick_rX;
+static volatile uint32_t g_joystick_rY;
+static volatile uint32_t g_joysteck_X;
 
 
 static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
