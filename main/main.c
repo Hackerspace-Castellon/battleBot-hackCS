@@ -18,21 +18,18 @@
 
 #include <math.h>
 
-// Defined in my_platform.c
-struct uni_platform* get_my_platform(void);
+// --------------- COMIENZO CONFIGURACIÓN ---------------
 
-// define motors
-#define MOTOR_DELANTERO_DERECHO 0
-#define MOTOR_DELANTERO_IZQUIERDO 1
-#define MOTOR_TRASERO_DERECHO 2
-#define MOTOR_TRASERO_IZQUIERDO 3
+// dead zone of all joysticks
+#define DEAD_ZONE 30
 
-// forward
-#define DIRECTION_FORWARD 0
-#define DIRECTION_BACKWARDS 1
+// MAC address of the allowed controller
+static const char * controller_addr_string = "40:8E:2C:63:4F:34";
+
+// PINES DE LA CONEXIÓN A LOS MOTORES, CON EL DRIVER 8833
 
 // motor delantero derecho
-#define PIN_MDD1 14
+#define PIN_MDD1 17
 #define PIN_MDD2 27
 
 // motor delantero izquierdo
@@ -44,8 +41,23 @@ struct uni_platform* get_my_platform(void);
 #define PIN_MTD2 33
 
 // motor trasero izquierdo
-#define PIN_MTI1 25
-#define PIN_MTI2 26
+#define PIN_MTI1 26
+#define PIN_MTI2 25
+
+// --------- FIN CONFIGURACIÓN ------------
+
+// define motors
+#define MOTOR_DELANTERO_DERECHO 0
+#define MOTOR_DELANTERO_IZQUIERDO 1
+#define MOTOR_TRASERO_DERECHO 2
+#define MOTOR_TRASERO_IZQUIERDO 3
+
+// forward
+#define DIRECTION_FORWARD 0
+#define DIRECTION_BACKWARDS 1
+
+// Defined in my_platform.c
+struct uni_platform* get_my_platform(void);
 
 // para almacenar los valores de los ejes:
 
@@ -95,7 +107,6 @@ static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
 
 static const char *TAG = "MAIN";
 
-static const char * controller_addr_string = "40:8E:2C:63:4F:34";
 
 
 void ledc_init(){
@@ -238,9 +249,9 @@ void updateMotorsTask(void){
         joystick_X = g_joystick_X;
         
         // dead area: 20 units in all axes
-        if (abs(joystick_rX) < 20) {joystick_rX = 0;}
-        if (abs(joystick_rY) < 20) {joystick_rY = 0;}
-        if (abs(joystick_X) < 20) {joystick_X = 0;}
+        if (abs(joystick_rX) < DEAD_ZONE) {joystick_rX = 0;}
+        if (abs(joystick_rY) < DEAD_ZONE) {joystick_rY = 0;}
+        if (abs(joystick_X) < DEAD_ZONE) {joystick_X = 0;}
 
 
 
@@ -291,7 +302,7 @@ void updateMotorsTask(void){
             trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
         }
         //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
-        //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
+        ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
         //vTaskDelay(pdMS_TO_TICKS(1000));
 
 
