@@ -134,7 +134,7 @@ void ledc_init(){
     ledc_channel.channel = LEDC_CHANNEL_2;
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
     // MDD2
-    ledc_channel.gpio_num = PIN_MDD1;
+    ledc_channel.gpio_num = PIN_MDD2;
     ledc_channel.channel = LEDC_CHANNEL_3;
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 
@@ -325,6 +325,8 @@ void updateMotorsTask(void){
         } else {
             mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * 1024));
         }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
