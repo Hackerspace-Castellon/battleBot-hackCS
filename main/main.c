@@ -293,6 +293,38 @@ void updateMotorsTask(void){
         //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
         //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
         //vTaskDelay(pdMS_TO_TICKS(1000));
+
+
+        // MOTOR_DELANTERO_DERECHO
+        if (delantero_derecha > 0){
+            mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(delantero_derecha) * 1024));
+        } else {
+            mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_derecha) * 1024));
+        }
+
+        // MOTOR_DELANTERO_IZQUIERDO
+
+        if (delantero_izquierda > 0){
+            mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(delantero_izquierda) * 1024));
+        } else {
+            mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_izquierda) * 1024));
+        }
+
+        // MOTOR_TRASERO_DERECHO
+
+        if (trasero_derecha > 0){
+            mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(trasero_derecha) * 1024));
+        } else {
+            mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_derecha) * 1024));
+        }
+
+        // MOTOR_TRASERO_IZQUIERDO
+
+        if (trasero_izquierda > 0){
+            mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(trasero_izquierda) * 1024));
+        } else {
+            mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * 1024));
+        }
     }
 }
 
