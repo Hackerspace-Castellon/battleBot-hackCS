@@ -16,6 +16,8 @@
 #include "sdkconfig.h"
 #include <driver/ledc.h>
 
+#include <math.h>
+
 // Defined in my_platform.c
 struct uni_platform* get_my_platform(void);
 
@@ -47,9 +49,9 @@ struct uni_platform* get_my_platform(void);
 
 // para almacenar los valores de los ejes:
 
-static volatile uint32_t g_joystick_rX;
-static volatile uint32_t g_joystick_rY;
-static volatile uint32_t g_joystick_X;
+static volatile int32_t g_joystick_rX = 0;
+static volatile int32_t g_joystick_rY = 0;
+static volatile int32_t g_joystick_X = 0;
 
 
 static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
@@ -164,8 +166,8 @@ void ledc_init(){
 
 void mover_motor(uint32_t motor, uint32_t direction ,uint32_t pwm_value){
 
-    ledc_channel_t ch1;
-    ledc_channel_t ch2;
+    ledc_channel_t ch1 = 0;
+    ledc_channel_t ch2 = 0;
 
     switch (motor){
         case MOTOR_DELANTERO_DERECHO:
@@ -209,15 +211,109 @@ void mover_motor(uint32_t motor, uint32_t direction ,uint32_t pwm_value){
 
 }
 
+double max_double(double a, double b) {
+    return (a > b) ? a : b;
+}
+
+// ejecutamos en el core1, así tenemos cada tarea en un core
+void updateMotorsTask(void){
+    const char *TAG = "MOTORS";
+    ESP_LOGI(TAG, "Starting motors task");
+    ESP_LOGI(TAG, "Task running on core %d", xPortGetCoreID());
+
+    int32_t joystick_rX = 0;
+    int32_t joystick_rY = 0;
+    int32_t joystick_X = 0;
+
+    double x = 0;
+    double y = 0;
+    double turn = 0;
+
+    for(;;){
+        //TODO maybe check for no changes to prevent useless updates
+
+        // update locals
+        joystick_rX = g_joystick_rX;
+        joystick_rY = g_joystick_rY;
+        joystick_X = g_joystick_X;
+        
+        // dead area: 20 units in all axes
+        if (abs(joystick_rX) < 20) {joystick_rX = 0;}
+        if (abs(joystick_rY) < 20) {joystick_rY = 0;}
+        if (abs(joystick_X) < 20) {joystick_X = 0;}
+
+
+
+        // normalize variables
+        // from -512_511 to -1_1
+        x = (double)((double)joystick_rX + (double)512) / (double)1023;
+        y = -(double)((double)joystick_rY + (double)512) / (double)1023;
+        turn = (double)((double)joystick_X + (double)512) / (double)1023;
+
+
+        double potencia = 0;
+
+        double seno = 0;
+        double coseno = 0;
+        double maximo = 0;
+
+
+        if (x == 0.0 && y == 0.0){
+            potencia = 0;
+            seno = 0;
+            coseno = 0;
+            maximo = 1;
+        } else {
+            double theta = atan2(y,x);
+            potencia = hypot(x,y);
+
+            seno = sin(theta - M_PI_4);
+            coseno = cos(theta - M_PI_4);
+
+            maximo = max_double(fabs(seno), fabs(coseno));
+        }
+        // calculamos 
+
+        double delantero_izquierda = potencia * coseno/maximo + turn;
+        double delantero_derecha = potencia * seno/maximo - turn;
+        double trasero_izquierda = potencia * seno/maximo + turn;
+        double trasero_derecha = potencia * coseno/maximo - turn;
+
+        if (potencia + fabs(turn) > 1){
+            delantero_izquierda = delantero_izquierda / (potencia + fabs(turn));
+            delantero_derecha = delantero_derecha / (potencia + fabs(turn));
+            trasero_derecha = trasero_derecha / (potencia + fabs(turn));
+            trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
+        }
+        ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
+        ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+
+// main se ejecuta en el core 0, se encarga del bluetooth y comunicaciones
 void app_main(void)
 {
     ESP_LOGI(TAG, "Starting main app");
+
+    ESP_LOGI(TAG, "Task running on core %d", xPortGetCoreID());
     // setup bluetooth
     bd_addr_t controller_addr;
     sscanf_bd_addr(controller_addr_string, controller_addr);
 
     // set up PWM settings
     ledc_init();
+
+    xTaskCreatePinnedToCore(
+        updateMotorsTask,            // Task function
+        "my_task",          // Task name
+        8096,               // Stack size in bytes
+        NULL,               // Parameter to pass to the task function
+        1,                  // Task priority
+        NULL,               // Task handle (can be NULL if not needed)
+        1                   // Core ID (1 for core 1)
+    );
 
     ESP_LOGI(TAG, "Finished setup");
 
