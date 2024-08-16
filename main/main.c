@@ -49,23 +49,23 @@ struct uni_platform* get_my_platform(void);
 
 static volatile uint32_t g_joystick_rX;
 static volatile uint32_t g_joystick_rY;
-static volatile uint32_t g_joysteck_X;
+static volatile uint32_t g_joystick_X;
 
 
 static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
     static const char *TAG = "ON_CONTROLLER_DATA";
 
-    static uint8_t leds = 0;
-    static uint8_t enabled = true;
-    static uni_controller_t prev = {0};
+    //static uint8_t leds = 0;
+    //static uint8_t enabled = true;
+    //static uni_controller_t prev = {0};
     uni_gamepad_t* gp;
 
     // Optimization to avoid processing the previous data so that the console
     // does not get spammed with a lot of logs, but remove it from your project.
-    if (memcmp(&prev, ctl, sizeof(*ctl)) == 0) {
-        return;
-    }
-    prev = *ctl;
+    //if (memcmp(&prev, ctl, sizeof(*ctl)) == 0) {
+    //    return;
+    //}
+    //prev = *ctl;
     // Print device Id before dumping gamepad.
     // This could be very CPU intensive and might crash the ESP32.
     // Remove these 2 lines in production code.
@@ -76,25 +76,12 @@ static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
         case UNI_CONTROLLER_CLASS_GAMEPAD:
             gp = &ctl->gamepad;
 
-            // Debugging
-            // Axis ry: control rumble
-            if ((gp->buttons & BUTTON_A) && d->report_parser.play_dual_rumble != NULL) {
-                d->report_parser.play_dual_rumble(d, 0 /* delayed start ms */, 250 /* duration ms */,
-                                                  255 /* weak magnitude */, 0 /* strong magnitude */);
-            }
-            // Buttons: Control LEDs On/Off
-            if ((gp->buttons & BUTTON_B) && d->report_parser.set_player_leds != NULL) {
-                d->report_parser.set_player_leds(d, leds++ & 0x0f);
-            }
-            // Axis: control RGB color
-            if ((gp->buttons & BUTTON_X) && d->report_parser.set_lightbar_color != NULL) {
-                uint8_t r = (gp->axis_x * 256) / 512;
-                uint8_t g = (gp->axis_y * 256) / 512;
-                uint8_t b = (gp->axis_rx * 256) / 512;
-                d->report_parser.set_lightbar_color(d, r, g, b);
-            }
-            ESP_LOGI(TAG,"rX: %ld, rY: %ld",gp->axis_rx, gp->axis_ry);
-            ESP_LOGI(TAG,"X: %ld, Y: %ld",gp->axis_x, gp->axis_y);
+            //ESP_LOGI(TAG,"rX: %ld, rY: %ld",gp->axis_rx, gp->axis_ry);
+            //ESP_LOGI(TAG,"X: %ld, Y: %ld",gp->axis_x, gp->axis_y);
+
+            g_joystick_X = gp->axis_x;
+            g_joystick_rY = gp->axis_ry;
+            g_joystick_rX = gp->axis_rx;
 
 
             break;
