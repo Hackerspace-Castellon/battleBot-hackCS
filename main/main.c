@@ -247,8 +247,13 @@ void updateMotorsTask(void){
         // normalize variables
         // from -512_511 to -1_1
         x = (double)((double)joystick_rX + (double)512) / (double)1023;
+        x = (x - 0.50)*2.0;
         y = -(double)((double)joystick_rY + (double)512) / (double)1023;
+        y = (y + 0.50)*2.0;
         turn = (double)((double)joystick_X + (double)512) / (double)1023;
+        turn = (turn - 0.50)*2.0;
+
+        //ESP_LOGE(TAG, "x: %.2f | y: %.2f | turn: %.2f", x, y, turn);
 
 
         double potencia = 0;
@@ -285,9 +290,9 @@ void updateMotorsTask(void){
             trasero_derecha = trasero_derecha / (potencia + fabs(turn));
             trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
         }
-        ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
-        ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
+        //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
