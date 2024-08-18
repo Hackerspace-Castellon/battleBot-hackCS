@@ -26,23 +26,25 @@
 // MAC address of the allowed controller
 static const char * controller_addr_string = "40:8E:2C:63:4F:34";
 
-// PINES DE LA CONEXIÓN A LOS MOTORES, CON EL DRIVER 8833
+// PINES DE LA CONEXIÓN A LOS MOTORES, CON EL DRIVER 8833, 
+
+// ESTOS SON DE SALIDA ASÍ QUE TIENES QUE SER MENORES A 34.
 
 // motor delantero derecho
-#define PIN_MDD1 17
-#define PIN_MDD2 27
+#define PIN_MDD1 33
+#define PIN_MDD2 32
 
 // motor delantero izquierdo
-#define PIN_MDI1 12
-#define PIN_MDI2 13
+#define PIN_MDI1 23
+#define PIN_MDI2 22
 
 // motor trasero derecho
-#define PIN_MTD1 32
-#define PIN_MTD2 33
+#define PIN_MTD1 14         // uno de estos dos se enciende automaticamente durante el arranque.
+#define PIN_MTD2 27
 
 // motor trasero izquierdo
-#define PIN_MTI1 26
-#define PIN_MTI2 25
+#define PIN_MTI1 25 
+#define PIN_MTI2 26
 
 // --------- FIN CONFIGURACIÓN ------------
 
