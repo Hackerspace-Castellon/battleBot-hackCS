@@ -31,20 +31,20 @@ static const char * controller_addr_string = "40:8E:2C:63:4F:34";
 // ESTOS SON DE SALIDA ASÍ QUE TIENES QUE SER MENORES A 34.
 
 // motor delantero derecho
-#define PIN_MDD1 14
-#define PIN_MDD2 27
+#define PIN_MDD1 22//22 no va
+#define PIN_MDD2 27//
 
 // motor delantero izquierdo
-#define PIN_MDI1 32
-#define PIN_MDI2 33
+#define PIN_MDI1 33 //Funciona
+#define PIN_MDI2 32 // Funciona
 
 // motor trasero derecho
-#define PIN_MTD1 16        
-#define PIN_MTD2 4
+#define PIN_MTD1 4  //Funciona   
+#define PIN_MTD2 16 //Funciona
 
 // motor trasero izquierdo
-#define PIN_MTI1 18 
-#define PIN_MTI2 19
+#define PIN_MTI1 19 //Funciona
+#define PIN_MTI2 18 //Funciona
 
 // --------- FIN CONFIGURACIÓN ------------
 
@@ -304,7 +304,7 @@ void updateMotorsTask(void){
             trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
         }
         //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
-        ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
+        //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
         //vTaskDelay(pdMS_TO_TICKS(1000));
 
 
