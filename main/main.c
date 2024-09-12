@@ -397,7 +397,10 @@ void updateMotorsTask(void){
     }
 }
 
-
+static void on_device_disconnected(uni_hid_device_t* d) {
+    logi("custom: device disconnected: %p\n", d);
+    esp_restart();
+}
 // main se ejecuta en el core 0, se encarga del bluetooth y comunicaciones
 void app_main(void)
 {
@@ -451,6 +454,7 @@ void app_main(void)
 
     struct uni_platform* platform = get_my_platform();
     platform->on_controller_data = on_controller_data;
+    platform->on_device_disconnected = on_device_disconnected;
 
     uni_platform_set_custom(platform);
 
