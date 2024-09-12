@@ -54,6 +54,10 @@ static const char * controller_addr_string = "40:8E:2C:63:4F:34";
 #define MOTOR_TRASERO_DERECHO 2
 #define MOTOR_TRASERO_IZQUIERDO 3
 
+// BUTTONS
+//#define BUTTON_L3 256
+//#define BUTTON_R3 512
+
 // forward
 #define DIRECTION_FORWARD 0
 #define DIRECTION_BACKWARDS 1
@@ -66,6 +70,7 @@ struct uni_platform* get_my_platform(void);
 static volatile int32_t g_joystick_rX = 0;
 static volatile int32_t g_joystick_rY = 0;
 static volatile int32_t g_joystick_X = 0;
+static volatile int32_t g_buttons = 0;
 
 
 static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
@@ -94,7 +99,8 @@ static void on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
 
             //ESP_LOGI(TAG,"rX: %ld, rY: %ld",gp->axis_rx, gp->axis_ry);
             //ESP_LOGI(TAG,"X: %ld, Y: %ld",gp->axis_x, gp->axis_y);
-
+            //ESP_LOGI(TAG,"L3: %d", gp->buttons);
+            g_buttons = gp->buttons;
             g_joystick_X = gp->axis_x;
             g_joystick_rY = gp->axis_ry;
             g_joystick_rX = gp->axis_rx;
@@ -224,12 +230,50 @@ void mover_motor(uint32_t motor, uint32_t direction ,uint32_t pwm_value){
 
 }
 
+void frenar_motor(uint32_t motor){
+    ledc_channel_t ch1 = 0;
+    ledc_channel_t ch2 = 0;
+
+    switch (motor){
+        case MOTOR_DELANTERO_DERECHO:
+            ch1 = LEDC_CHANNEL_2;
+            ch2 = LEDC_CHANNEL_3;
+        break;
+        case MOTOR_DELANTERO_IZQUIERDO:
+            ch1 = LEDC_CHANNEL_0;
+            ch2 = LEDC_CHANNEL_1;
+        break;
+        case MOTOR_TRASERO_DERECHO:
+            ch1 = LEDC_CHANNEL_4;
+            ch2 = LEDC_CHANNEL_5;
+        break;
+        case MOTOR_TRASERO_IZQUIERDO:
+            ch1 = LEDC_CHANNEL_6;
+            ch2 = LEDC_CHANNEL_7;
+        break;
+    }
+
+    // set pin2
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, ch2, 1024);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, ch2);
+
+    // set pin1
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, ch1, 1024);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, ch1);
+}
+
 double max_double(double a, double b) {
     return (a > b) ? a : b;
 }
 
 // ejecutamos en el core1, así tenemos cada tarea en un core
 void updateMotorsTask(void){
+    double delantero_izquierda=0;
+    double delantero_derecha=0;
+    double trasero_izquierda=0;
+    double trasero_derecha=0;
+
+
     const char *TAG = "MOTORS";
     ESP_LOGI(TAG, "Starting motors task");
     ESP_LOGI(TAG, "Task running on core %d", xPortGetCoreID());
@@ -237,6 +281,7 @@ void updateMotorsTask(void){
     int32_t joystick_rX = 0;
     int32_t joystick_rY = 0;
     int32_t joystick_X = 0;
+    int32_t buttons = 0;
 
     double x = 0;
     double y = 0;
@@ -249,96 +294,105 @@ void updateMotorsTask(void){
         joystick_rX = g_joystick_rX;
         joystick_rY = g_joystick_rY;
         joystick_X = g_joystick_X;
-        
-        // dead area: 20 units in all axes
-        if (abs(joystick_rX) < DEAD_ZONE) {joystick_rX = 0;}
-        if (abs(joystick_rY) < DEAD_ZONE) {joystick_rY = 0;}
-        if (abs(joystick_X) < DEAD_ZONE) {joystick_X = 0;}
+        buttons = g_buttons;
+
+        if (buttons & BUTTON_THUMB_R){
+            //ESP_LOGI(TAG, "BUUTN THUM R");
+            frenar_motor(MOTOR_DELANTERO_DERECHO);
+            frenar_motor(MOTOR_DELANTERO_IZQUIERDO);
+            frenar_motor(MOTOR_TRASERO_DERECHO);
+            frenar_motor(MOTOR_TRASERO_IZQUIERDO);
+            
+        } else{
+
+            // dead area: 20 units in all axes
+            if (abs(joystick_rX) < DEAD_ZONE) {joystick_rX = 0;}
+            if (abs(joystick_rY) < DEAD_ZONE) {joystick_rY = 0;}
+            if (abs(joystick_X) < DEAD_ZONE) {joystick_X = 0;}
+
+            // normalize variables
+            // from -512_511 to -1_1
+            x = (double)((double)joystick_rX + (double)512) / (double)1023;
+            x = (x - 0.50)*2.0;
+            y = -(double)((double)joystick_rY + (double)512) / (double)1023;
+            y = (y + 0.50)*2.0;
+            turn = (double)((double)joystick_X + (double)512) / (double)1023;
+            turn = (turn - 0.50)*2.0;
+
+            //ESP_LOGE(TAG, "x: %.2f | y: %.2f | turn: %.2f", x, y, turn);
 
 
+            double potencia = 0;
 
-        // normalize variables
-        // from -512_511 to -1_1
-        x = (double)((double)joystick_rX + (double)512) / (double)1023;
-        x = (x - 0.50)*2.0;
-        y = -(double)((double)joystick_rY + (double)512) / (double)1023;
-        y = (y + 0.50)*2.0;
-        turn = (double)((double)joystick_X + (double)512) / (double)1023;
-        turn = (turn - 0.50)*2.0;
-
-        //ESP_LOGE(TAG, "x: %.2f | y: %.2f | turn: %.2f", x, y, turn);
+            double seno = 0;
+            double coseno = 0;
+            double maximo = 0;
 
 
-        double potencia = 0;
+            if (x == 0.0 && y == 0.0){
+                potencia = 0;
+                seno = 0;
+                coseno = 0;
+                maximo = 1;
+            } else {
+                double theta = atan2(y,x);
+                potencia = hypot(x,y);
 
-        double seno = 0;
-        double coseno = 0;
-        double maximo = 0;
+                seno = sin(theta - M_PI_4);
+                coseno = cos(theta - M_PI_4);
+
+                maximo = max_double(fabs(seno), fabs(coseno));
+            }
+            // calculamos 
+
+            delantero_izquierda = potencia * coseno/maximo + turn;
+            delantero_derecha = potencia * seno/maximo - turn;
+            trasero_izquierda = potencia * seno/maximo + turn;
+            trasero_derecha = potencia * coseno/maximo - turn;
+
+            if (potencia + fabs(turn) > 1){
+                delantero_izquierda = delantero_izquierda / (potencia + fabs(turn));
+                delantero_derecha = delantero_derecha / (potencia + fabs(turn));
+                trasero_derecha = trasero_derecha / (potencia + fabs(turn));
+                trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
+            }
+            //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
+            //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
+            //vTaskDelay(pdMS_TO_TICKS(1000));
+            
 
 
-        if (x == 0.0 && y == 0.0){
-            potencia = 0;
-            seno = 0;
-            coseno = 0;
-            maximo = 1;
-        } else {
-            double theta = atan2(y,x);
-            potencia = hypot(x,y);
+            // MOTOR_DELANTERO_DERECHO
+            if (delantero_derecha > 0){
+                mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(delantero_derecha) * 1024));
+            } else {
+                mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_derecha) * 1024));
+            }
 
-            seno = sin(theta - M_PI_4);
-            coseno = cos(theta - M_PI_4);
+            // MOTOR_DELANTERO_IZQUIERDO
 
-            maximo = max_double(fabs(seno), fabs(coseno));
+            if (delantero_izquierda > 0){
+                mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(delantero_izquierda) * 1024));
+            } else {
+                mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_izquierda) * 1024));
+            }
+
+            // MOTOR_TRASERO_DERECHO
+
+            if (trasero_derecha > 0){
+                mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(trasero_derecha) * 1024));
+            } else {
+                mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_derecha) * 1024));
+            }
+
+            // MOTOR_TRASERO_IZQUIERDO
+
+            if (trasero_izquierda > 0){
+                mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(trasero_izquierda) * 1024));
+            } else {
+                mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * 1024));
+            }
         }
-        // calculamos 
-
-        double delantero_izquierda = potencia * coseno/maximo + turn;
-        double delantero_derecha = potencia * seno/maximo - turn;
-        double trasero_izquierda = potencia * seno/maximo + turn;
-        double trasero_derecha = potencia * coseno/maximo - turn;
-
-        if (potencia + fabs(turn) > 1){
-            delantero_izquierda = delantero_izquierda / (potencia + fabs(turn));
-            delantero_derecha = delantero_derecha / (potencia + fabs(turn));
-            trasero_derecha = trasero_derecha / (potencia + fabs(turn));
-            trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
-        }
-        //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
-        //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
-        //vTaskDelay(pdMS_TO_TICKS(1000));
-
-
-        // MOTOR_DELANTERO_DERECHO
-        if (delantero_derecha > 0){
-            mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(delantero_derecha) * 1024));
-        } else {
-            mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_derecha) * 1024));
-        }
-
-        // MOTOR_DELANTERO_IZQUIERDO
-
-        if (delantero_izquierda > 0){
-            mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(delantero_izquierda) * 1024));
-        } else {
-            mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_izquierda) * 1024));
-        }
-
-        // MOTOR_TRASERO_DERECHO
-
-        if (trasero_derecha > 0){
-            mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(trasero_derecha) * 1024));
-        } else {
-            mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_derecha) * 1024));
-        }
-
-        // MOTOR_TRASERO_IZQUIERDO
-
-        if (trasero_izquierda > 0){
-            mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(trasero_izquierda) * 1024));
-        } else {
-            mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * 1024));
-        }
-
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
