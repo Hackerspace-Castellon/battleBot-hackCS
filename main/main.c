@@ -23,6 +23,10 @@
 // dead zone of all joysticks
 #define DEAD_ZONE 30
 
+// por debajo de esta velocidad se frenan las ruedas
+# define HEADROOM_FRENAR_RUEDA 0.1
+
+
 // MAC address of the allowed controller
 static const char * controller_addr_string = "40:8E:2C:63:4F:34";
 
@@ -373,33 +377,37 @@ void updateMotorsTask(void){
             //vTaskDelay(pdMS_TO_TICKS(1000));
             
 
-
             // MOTOR_DELANTERO_DERECHO
-            if (delantero_derecha > 0){
+            if (fabs(delantero_derecha) < HEADROOM_FRENAR_RUEDA){
+                frenar_motor(MOTOR_DELANTERO_DERECHO);
+            } else if (delantero_derecha > 0){
                 mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(delantero_derecha) * multiplier));
             } else {
                 mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_derecha) * multiplier));
             }
 
             // MOTOR_DELANTERO_IZQUIERDO
-
-            if (delantero_izquierda > 0){
+            if (fabs(delantero_izquierda) < HEADROOM_FRENAR_RUEDA){
+                frenar_motor(MOTOR_DELANTERO_IZQUIERDO);
+            } else if (delantero_izquierda > 0){
                 mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(delantero_izquierda) * multiplier));
             } else {
                 mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_izquierda) * multiplier));
             }
 
             // MOTOR_TRASERO_DERECHO
-
-            if (trasero_derecha > 0){
+            if (fabs(trasero_derecha) < HEADROOM_FRENAR_RUEDA){
+                frenar_motor(MOTOR_TRASERO_DERECHO);
+            } else if (trasero_derecha > 0){
                 mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(trasero_derecha) * multiplier));
             } else {
                 mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_derecha) * multiplier));
             }
 
             // MOTOR_TRASERO_IZQUIERDO
-
-            if (trasero_izquierda > 0){
+            if (fabs(trasero_izquierda) < HEADROOM_FRENAR_RUEDA){
+                frenar_motor(MOTOR_TRASERO_IZQUIERDO);
+            } else if (trasero_izquierda > 0){
                 mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(trasero_izquierda) * multiplier));
             } else {
                 mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * multiplier));
