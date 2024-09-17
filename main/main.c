@@ -289,6 +289,7 @@ void updateMotorsTask(void){
 
     for(;;){
         //TODO maybe check for no changes to prevent useless updates
+        uint32_t multiplier = 1024;
 
         // update locals
         joystick_rX = g_joystick_rX;
@@ -356,6 +357,17 @@ void updateMotorsTask(void){
                 trasero_derecha = trasero_derecha / (potencia + fabs(turn));
                 trasero_izquierda = trasero_izquierda / (potencia + fabs(turn));
             }
+
+            // calculate multiplier
+            if (buttons & BUTTON_SHOULDER_R && buttons & BUTTON_SHOULDER_L){
+                multiplier = 256;
+            } else if (buttons & BUTTON_SHOULDER_R || buttons & BUTTON_SHOULDER_L){
+                multiplier = 512;
+            } else {
+                multiplier = 1024;
+            }
+
+
             //ESP_LOGI(TAG, "X: %+ld | rX: %+ld | rY: %+ld", joystick_X, joystick_rX, joystick_rY);
             //ESP_LOGI(TAG, "DI: %.2f | DD: %.2f | TD: %.2f | TI: %.2f ", delantero_izquierda, delantero_derecha, trasero_derecha, trasero_izquierda);
             //vTaskDelay(pdMS_TO_TICKS(1000));
@@ -364,33 +376,33 @@ void updateMotorsTask(void){
 
             // MOTOR_DELANTERO_DERECHO
             if (delantero_derecha > 0){
-                mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(delantero_derecha) * 1024));
+                mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(delantero_derecha) * multiplier));
             } else {
-                mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_derecha) * 1024));
+                mover_motor(MOTOR_DELANTERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_derecha) * multiplier));
             }
 
             // MOTOR_DELANTERO_IZQUIERDO
 
             if (delantero_izquierda > 0){
-                mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(delantero_izquierda) * 1024));
+                mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(delantero_izquierda) * multiplier));
             } else {
-                mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_izquierda) * 1024));
+                mover_motor(MOTOR_DELANTERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(delantero_izquierda) * multiplier));
             }
 
             // MOTOR_TRASERO_DERECHO
 
             if (trasero_derecha > 0){
-                mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(trasero_derecha) * 1024));
+                mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_FORWARD, (int)round(fabs(trasero_derecha) * multiplier));
             } else {
-                mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_derecha) * 1024));
+                mover_motor(MOTOR_TRASERO_DERECHO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_derecha) * multiplier));
             }
 
             // MOTOR_TRASERO_IZQUIERDO
 
             if (trasero_izquierda > 0){
-                mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(trasero_izquierda) * 1024));
+                mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_FORWARD, (int)round(fabs(trasero_izquierda) * multiplier));
             } else {
-                mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * 1024));
+                mover_motor(MOTOR_TRASERO_IZQUIERDO, DIRECTION_BACKWARDS,(int)round(fabs(trasero_izquierda) * multiplier));
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
