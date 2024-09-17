@@ -360,9 +360,9 @@ void updateMotorsTask(void){
 
             // calculate multiplier
             if (buttons & BUTTON_SHOULDER_R && buttons & BUTTON_SHOULDER_L){
-                multiplier = 256;
-            } else if (buttons & BUTTON_SHOULDER_R || buttons & BUTTON_SHOULDER_L){
                 multiplier = 512;
+            } else if (buttons & BUTTON_SHOULDER_R || buttons & BUTTON_SHOULDER_L){
+                multiplier = 768;
             } else {
                 multiplier = 1024;
             }
