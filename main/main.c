@@ -363,12 +363,15 @@ void updateMotorsTask(void){
             }
 
             // calculate multiplier
-            if (buttons & BUTTON_SHOULDER_R && buttons & BUTTON_SHOULDER_L){
-                multiplier = 512;
-            } else if (buttons & BUTTON_SHOULDER_R || buttons & BUTTON_SHOULDER_L){
+            if ((buttons & BUTTON_SHOULDER_L) && (buttons & BUTTON_SHOULDER_L)){
                 multiplier = 768;
-            } else {
+            } else if (buttons & BUTTON_SHOULDER_R){
                 multiplier = 1024;
+
+            } else if (buttons & BUTTON_SHOULDER_L){
+                multiplier = 512;
+            } else {
+                multiplier = 768;
             }
 
 
